@@ -1,56 +1,52 @@
-# ici j'importe tous les modules nécessaires
 from PyQt5.QtWidgets import QApplication, QMainWindow, QToolBar, QLineEdit, QAction, QTabWidget, QVBoxLayout, QWidget, QMenu
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import QUrl, Qt
 import sys
-import os
 
-# pour éviter de créer des fenêtres supplémentaires, on vérifie si l'application a déjà une instance ouverte
+# Vérifie si une instance existe
 application = QApplication.instance()
 if not application:
     application = QApplication(sys.argv)
 
-# Charge le fichier local index.html
-local_path = os.path.abspath("index.html")
+# URL de la page d'accueil
+home_url = QUrl("https://leo62-glitch.github.io/cedzee-google/")
 
-# Fenêtre principale
 class BrowserWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        # Titre et dimensions de la fenêtre
+        # Configuration de la fenêtre
         self.setWindowTitle("CEDZEE Browser")
         self.resize(1200, 800)
         self.move(300, 50)
 
-        # Création du widget d'onglets
+        # Onglets
         self.tabs = QTabWidget()
         self.tabs.setTabsClosable(True)
         self.tabs.tabCloseRequested.connect(self.close_tab)
         self.setCentralWidget(self.tabs)
 
-        # Menu de navigation
+        # Menu
         self.menu = QToolBar("Menu de navigation")
         self.addToolBar(self.menu)
 
-        # Ajout des boutons de navigation
+        # Boutons de navigation
         self.add_navigation_buttons()
 
-        # Ajout d'un premier onglet par défaut
-        self.add_new_tab(QUrl.fromLocalFile(local_path), "Nouvel Onglet")
+        # Premier onglet
+        self.add_new_tab(home_url, "Nouvel Onglet")
 
-        # Activer le menu contextuel pour les onglets
+        # Menu contextuel
         self.tabs.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tabs.customContextMenuRequested.connect(self.show_tab_context_menu)
 
         # Raccourci clavier pour créer un nouvel onglet
-        self.add_new_tab_shortcut = QAction(self)
-        self.add_new_tab_shortcut.setShortcut("Ctrl+T")
-        self.add_new_tab_shortcut.triggered.connect(self.open_new_tab)
-        self.addAction(self.add_new_tab_shortcut)
+        self.new_tab_shortcut = QAction(self)
+        self.new_tab_shortcut.setShortcut("Ctrl+T")
+        self.new_tab_shortcut.triggered.connect(self.open_new_tab)
+        self.addAction(self.new_tab_shortcut)
 
     def add_navigation_buttons(self):
-        """Ajoute les boutons de navigation au menu."""
         # Bouton Précédent
         back_btn = QAction("←", self)
         back_btn.triggered.connect(lambda: self.current_browser().back())
@@ -82,13 +78,12 @@ class BrowserWindow(QMainWindow):
         self.menu.addAction(new_tab_btn)
 
     def add_new_tab(self, url, label="Nouvel Onglet"):
-        """Ajoute un nouvel onglet au navigateur."""
         browser = QWebEngineView()
         browser.setUrl(url)
         browser.urlChanged.connect(self.update_urlbar)
         browser.loadFinished.connect(lambda: self.tabs.setTabText(self.tabs.currentIndex(), browser.page().title()))
 
-        # Création d'un conteneur pour l'onglet
+        # Conteneur pour le nouvel onglet
         tab = QWidget()
         layout = QVBoxLayout()
         layout.addWidget(browser)
@@ -98,37 +93,30 @@ class BrowserWindow(QMainWindow):
         self.tabs.setCurrentWidget(tab)
 
     def current_browser(self):
-        """Renvoie l'instance actuelle de QWebEngineView."""
         current_tab = self.tabs.currentWidget()
         return current_tab.layout().itemAt(0).widget()
 
     def close_tab(self, index):
-        """Ferme l'onglet à l'index spécifié."""
-        if self.tabs.count() > 1:  # Ne pas fermer le dernier onglet
+        if self.tabs.count() > 1:
             self.tabs.removeTab(index)
 
     def navigate_to_url(self):
-        """Navigue vers l'URL saisie dans la barre d'adresse."""
         url = QUrl(self.adress_input.text())
         if url.scheme() == "":
             url.setScheme("http")
         self.current_browser().setUrl(url)
 
     def update_urlbar(self, url):
-        """Met à jour la barre d'adresse avec l'URL actuelle."""
         self.adress_input.setText(url.toString())
         self.adress_input.setCursorPosition(0)
 
     def go_home(self):
-        """Navigue vers la page d'accueil (index.html)."""
-        self.current_browser().setUrl(QUrl.fromLocalFile(local_path))
+        self.current_browser().setUrl(home_url)
 
     def open_new_tab(self):
-        """Ouvre un nouvel onglet."""
-        self.add_new_tab(QUrl.fromLocalFile(local_path), "Nouvel Onglet")
+        self.add_new_tab(home_url, "Nouvel Onglet")
 
     def show_tab_context_menu(self, position):
-        """Affiche un menu contextuel sur les onglets."""
         menu = QMenu()
         new_tab_action = menu.addAction("Ouvrir un nouvel onglet")
         close_tab_action = menu.addAction("Fermer cet onglet")
@@ -139,10 +127,9 @@ class BrowserWindow(QMainWindow):
         elif action == close_tab_action:
             self.close_tab(self.tabs.currentIndex())
 
-
-# On crée une instance de la fenêtre principale et on l'affiche
+# Lancement de la fenêtre principale
 window = BrowserWindow()
 window.show()
 
-# On exécute l'application
+# Exécution de l'application
 application.exec_()
